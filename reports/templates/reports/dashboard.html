@@ -1,0 +1,495 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Dashboard · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ===================== PAGE HEADER ===================== #}
+<div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+  <div>
+    <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Dashboard</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Overview for {{ current_business.name }}
+    </p>
+  </div>
+  <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Last updated {% now "H:i" %}
+  </div>
+</div>
+
+{# ===================== KPI CARDS ===================== #}
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+  {# Today's Revenue #}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Today's revenue
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {{ business_currency|default:"USD" }}
+            {{ today_kpi.revenue|default:0|floatformat:2 }}
+          </p>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      {% with change=today_kpi.change.revenue %}
+        {% if change is not None %}
+          <p class="mt-3 flex items-center gap-1 text-xs {% if change >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              {% if change >= 0 %}
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+              {% else %}
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              {% endif %}
+            </svg>
+            <span class="font-medium">{{ change|floatformat:1 }}%</span>
+            <span class="text-slate-500 dark:text-slate-400">vs yesterday</span>
+          </p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  {# Today's Orders #}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Today's orders
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {{ today_kpi.orders|default:0 }}
+          </p>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+      </div>
+      {% with change=today_kpi.change.orders %}
+        {% if change is not None %}
+          <p class="mt-3 flex items-center gap-1 text-xs {% if change >= 0 %}text-emerald-600 dark:text-emerald-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              {% if change >= 0 %}
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+              {% else %}
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              {% endif %}
+            </svg>
+            <span class="font-medium">{{ change|floatformat:1 }}%</span>
+            <span class="text-slate-500 dark:text-slate-400">vs yesterday</span>
+          </p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  {# Average Sale #}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Avg. sale today
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {{ business_currency|default:"USD" }}
+            {{ today_kpi.avg_sale|default:0|floatformat:2 }}
+          </p>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Low Stock #}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Low stock items
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            {{ low_stock_count|default:0 }}
+          </p>
+        </div>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+          </svg>
+        </div>
+      </div>
+      {% if low_stock_count %}
+        <a href="{% url 'reports:low_stock_report' %}"
+           class="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+          Review stock
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ===================== CHARTS ===================== #}
+<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+  {# Sales chart #}
+  <div class="card lg:col-span-2">
+    <div class="card-header flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Sales &mdash; last 14 days
+        </h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Revenue and order count
+        </p>
+      </div>
+      <div class="inline-flex rounded-md border border-surface-border dark:border-surface-dark-border">
+        {% with period=request.GET.period|default:"daily" %}
+          <a href="?period=daily"
+             class="rounded-l-md px-3 py-1.5 text-xs font-medium transition
+                    {% if period == 'daily' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+            Daily
+          </a>
+          <a href="?period=weekly"
+             class="border-l border-r border-surface-border px-3 py-1.5 text-xs font-medium transition dark:border-surface-dark-border
+                    {% if period == 'weekly' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+            Weekly
+          </a>
+          <a href="?period=monthly"
+             class="rounded-r-md px-3 py-1.5 text-xs font-medium transition
+                    {% if period == 'monthly' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+            Monthly
+          </a>
+        {% endwith %}
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="relative h-64">
+        <canvas id="salesChart"></canvas>
+      </div>
+      {# Fallback placeholder — shown if no data #}
+      <p id="salesChartEmpty"
+         class="hidden py-16 text-center text-sm text-slate-500 dark:text-slate-400">
+        No sales data yet.
+      </p>
+    </div>
+  </div>
+
+  {# Payment methods chart #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        Payment methods today
+      </h2>
+    </div>
+    <div class="card-body">
+      <div class="relative h-64">
+        <canvas id="paymentChart"></canvas>
+      </div>
+      <p id="paymentChartEmpty"
+         class="hidden py-16 text-center text-sm text-slate-500 dark:text-slate-400">
+        No payments today.
+      </p>
+    </div>
+  </div>
+</div>
+
+{# ===================== TABLES ===================== #}
+<div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+
+  {# Top products #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        Top products <span class="font-normal text-slate-400">· 30 days</span>
+      </h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+        <thead class="bg-slate-50 dark:bg-surface-dark">
+          <tr>
+            <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</th>
+            <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty</th>
+            <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Revenue</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+          {% for p in top_products %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-surface-dark">
+              <td class="px-4 py-3">
+                <div class="font-medium text-slate-900 dark:text-slate-100">
+                  {{ p.product_name }}
+                </div>
+                {% if p.product_sku %}
+                  <div class="text-xs text-slate-500 dark:text-slate-400">
+                    <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">{{ p.product_sku }}</code>
+                  </div>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-right text-slate-900 dark:text-slate-100">
+                {{ p.qty|default:0 }}
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                {{ business_currency|default:"USD" }} {{ p.revenue|default:0|floatformat:2 }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                No sales yet.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Top salespersons #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        Top salespeople <span class="font-normal text-slate-400">· 30 days</span>
+      </h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+        <thead class="bg-slate-50 dark:bg-surface-dark">
+          <tr>
+            <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Salesperson</th>
+            <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Orders</th>
+            <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Revenue</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+          {% for s in top_salespersons %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-surface-dark">
+              <td class="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                {{ s.cashier__first_name|default:"" }}
+                {{ s.cashier__last_name|default:"" }}
+                {% if not s.cashier__first_name and not s.cashier__last_name %}
+                  <span class="text-slate-500 dark:text-slate-400">
+                    {{ s.cashier__username|default:"—" }}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-right text-slate-900 dark:text-slate-100">
+                {{ s.orders|default:0 }}
+              </td>
+              <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+                {{ business_currency|default:"USD" }} {{ s.revenue|default:0|floatformat:2 }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" class="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                No data yet.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# ===================== RECENT SALES ===================== #}
+<div class="card mt-6">
+  <div class="card-header flex items-center justify-between">
+    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Recent sales</h2>
+    <a href="{% url 'sales:all_sales' %}" class="btn-ghost btn-sm">
+      View all
+      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+      <thead class="bg-slate-50 dark:bg-surface-dark">
+        <tr>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Reference</th>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Cashier</th>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Method</th>
+          <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Total</th>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+        {% for s in recent_sales %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-surface-dark">
+            <td class="px-4 py-3">
+              <a href="{% url 'sales:sale_detail' s.pk %}"
+                 class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                {{ s.reference }}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+              {% if s.cashier %}
+                {{ s.cashier.get_full_name|default:s.cashier.username }}
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+              {{ s.created_at|date:"M j, H:i" }}
+            </td>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+              {{ s.get_payment_method_display }}
+            </td>
+            <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+              {{ business_currency|default:"USD" }} {{ s.total|default:0|floatformat:2 }}
+            </td>
+            <td class="px-4 py-3">
+              {% if s.status == 'completed' %}
+                <span class="badge-green">Completed</span>
+              {% elif s.status == 'void' %}
+                <span class="badge-red">Void</span>
+              {% elif s.status == 'refunded' %}
+                <span class="badge-amber">Refunded</span>
+              {% else %}
+                <span class="badge-gray">{{ s.get_status_display }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+              No sales yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ===================== CHART DATA (safe JSON) ===================== #}
+{{ sales_chart_json|default:"null"|json_script:"sales-data" }}
+{{ payment_chart_json|default:"null"|json_script:"payment-data" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<script>
+(function () {
+  'use strict';
+
+  function readJson(id) {
+    var el = document.getElementById(id);
+    if (!el) return null;
+    try { return JSON.parse(el.textContent); } catch (e) { return null; }
+  }
+
+  function chartColors() {
+    // Read dark-mode-aware colors from CSS variables if you set them,
+    // otherwise fall back to defaults that work in both themes.
+    return {
+      text: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569',
+      grid: document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0',
+    };
+  }
+
+  function initCharts() {
+    if (typeof Chart === 'undefined') return;
+
+    var colors = chartColors();
+    Chart.defaults.color = colors.text;
+    Chart.defaults.borderColor = colors.grid;
+
+    // ----- Sales chart -----
+    var salesCanvas = document.getElementById('salesChart');
+    var salesData = readJson('sales-data');
+
+    if (salesCanvas && salesData && salesData.labels && salesData.labels.length) {
+      new Chart(salesCanvas, {
+        type: 'line',
+        data: salesData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12 } },
+            tooltip: { enabled: true },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              position: 'left',
+              title: { display: true, text: 'Revenue' },
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Orders' },
+            },
+          },
+        },
+      });
+    } else if (salesCanvas) {
+      salesCanvas.classList.add('hidden');
+      document.getElementById('salesChartEmpty')?.classList.remove('hidden');
+    }
+
+    // ----- Payment chart -----
+    var payCanvas = document.getElementById('paymentChart');
+    var payData = readJson('payment-data');
+
+    if (payCanvas && payData && payData.labels && payData.labels.length) {
+      new Chart(payCanvas, {
+        type: 'doughnut',
+        data: payData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12 } },
+          },
+          cutout: '60%',
+        },
+      });
+    } else if (payCanvas) {
+      payCanvas.classList.add('hidden');
+      document.getElementById('paymentChartEmpty')?.classList.remove('hidden');
+    }
+  }
+
+  // Chart.js loads with defer; wait for DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+# Node
+node_modules/
+package-lock.json   ← optional; some teams commit, some don't
+npm-debug.log*
+
+# Tailwind build output
+static/css/app.css  ← generated, don't commit
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.env
+db.sqlite3
+staticfiles/

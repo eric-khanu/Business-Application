@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block shell %}
+  <main id="main-content"
+        class="flex min-h-full flex-col items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+      {% include "partials/messages.html" %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+{% endblock %}

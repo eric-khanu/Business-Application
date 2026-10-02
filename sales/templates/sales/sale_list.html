@@ -1,0 +1,174 @@
+{% extends "accounts/base.html" %}
+{% block title %}Sales{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-0"><i class="bi bi-receipt"></i> Sales</h4>
+    <small class="text-muted">
+      {{ summary.count|default:0 }} sale{{ summary.count|pluralize }} ·
+      {{ user.business.currency }} {{ summary.total|default:0|floatformat:2 }} total
+    </small>
+  </div>
+  <a href="{% url 'sales:pos' %}" class="btn btn-primary">
+    <i class="bi bi-cart-check"></i> New Sale
+  </a>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-3">
+        {{ filter_form.q }}
+      </div>
+      {% if user.is_manager %}
+        <div class="col-md-2">{{ filter_form.cashier }}</div>
+      {% endif %}
+      <div class="col-md-2">{{ filter_form.status }}</div>
+      <div class="col-md-2">{{ filter_form.payment_method }}</div>
+      <div class="col-md-2">
+        {{ filter_form.date_from }}
+      </div>
+      <div class="col-md-2">
+        {{ filter_form.date_to }}
+      </div>
+      <div class="col-md-12 d-flex gap-2 mt-2">
+        <button class="btn btn-outline-primary">
+          <i class="bi bi-funnel"></i> Filter
+        </button>
+        <a href="{% url 'sales:all_sales' %}" class="btn btn-outline-secondary">
+          Reset
+        </a>
+      </div>
+    </form>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Reference</th>
+            <th>Date</th>
+            {% if show_cashier_column %}<th>Cashier</th>{% endif %}
+            <th>Customer</th>
+            <th>Method</th>
+            <th class="text-end">Total</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in page %}
+            <tr class="{% if s.status == 'voided' %}table-danger{% elif s.status == 'refunded' %}table-warning{% endif %}">
+              <td>
+                <a href="{% url 'sales:sale_detail' s.pk %}" class="fw-semibold text-decoration-none">
+                  {{ s.reference }}
+                </a>
+              </td>
+              <td>
+                <div>{{ s.created_at|date:"Y-m-d" }}</div>
+                <small class="text-muted">{{ s.created_at|date:"H:i" }}</small>
+              </td>
+              {% if show_cashier_column %}
+                <td>
+                  {% if s.cashier %}
+                    {{ s.cashier.get_full_name|default:s.cashier.username }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              {% endif %}
+              <td>{{ s.customer_name|default:"Walk-in" }}</td>
+              <td>
+                <span class="badge bg-light text-dark">
+                  {{ s.get_payment_method_display }}
+                </span>
+              </td>
+              <td class="text-end fw-semibold">
+                {{ user.business.currency }} {{ s.total|floatformat:2 }}
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <span class="badge bg-success">Completed</span>
+                {% elif s.status == 'voided' %}
+                  <span class="badge bg-danger">Voided</span>
+                {% elif s.status == 'refunded' %}
+                  <span class="badge bg-warning text-dark">Refunded</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ s.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{% url 'sales:sale_detail' s.pk %}"
+                   class="btn btn-sm btn-outline-primary" title="View">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{% url 'sales:receipt' s.pk %}"
+                   class="btn btn-sm btn-outline-secondary" title="Receipt">
+                  <i class="bi bi-receipt"></i>
+                </a>
+                {% if can_void and s.status == 'completed' %}
+                  <a href="{% url 'sales:sale_void' s.pk %}"
+                     class="btn btn-sm btn-outline-danger" title="Void">
+                    <i class="bi bi-x-circle"></i>
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="{% if show_cashier_column %}8{% else %}7{% endif %}"
+                  class="text-center text-muted py-4">
+                No sales match your filters.
+                <a href="{% url 'sales:pos' %}">Record a sale</a>.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page.has_other_pages %}
+      <nav>
+        <ul class="pagination justify-content-center mb-0">
+          {% if page.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?{% querystring page=page.previous_page_number %}">
+                &laquo;
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+          {% endif %}
+
+          {% for num in page.paginator.page_range %}
+            {% if num == page.number %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page.number|add:-3 and num < page.number|add:3 %}
+              <li class="page-item">
+                <a class="page-link" href="?{% querystring page=num %}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?{% querystring page=page.next_page_number %}">
+                &raquo;
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

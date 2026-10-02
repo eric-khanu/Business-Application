@@ -1,0 +1,180 @@
+{# partials/sidebar.html — role-aware navigation #}
+{% with current=request.resolver_match.url_name app=request.resolver_match.app_name %}
+
+<nav class="flex flex-1 flex-col gap-0.5 px-3 py-4 text-sm">
+
+  {# ================= Workspace ================= #}
+  <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+    Workspace
+  </p>
+
+  <a href="{% url 'reports:dashboard' %}"
+     class="nav-item {% if app == 'reports' and current == 'dashboard' %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+    </svg>
+    Dashboard
+  </a>
+
+  <a href="{% url 'sales:pos' %}"
+     class="nav-item {% if app == 'sales' and current == 'pos' %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+    </svg>
+    Point of sale
+  </a>
+
+  {# ================= Inventory ================= #}
+  <p class="mt-4 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+    Inventory
+  </p>
+
+  <a href="{% url 'inventory:product_list' %}"
+     class="nav-item {% if app == 'inventory' and 'product' in current %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+    </svg>
+    Products
+  </a>
+
+  <a href="{% url 'inventory:category_list' %}"
+     class="nav-item {% if app == 'inventory' and 'categor' in current %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/>
+    </svg>
+    Categories
+  </a>
+
+  <a href="{% url 'inventory:supplier_list' %}"
+     class="nav-item {% if app == 'inventory' and 'supplier' in current %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>
+    </svg>
+    Suppliers
+  </a>
+
+  <a href="{% url 'inventory:stock_history' %}"
+     class="nav-item {% if app == 'inventory' and 'stock' in current %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Stock history
+  </a>
+
+  <a href="{% url 'inventory:low_stock' %}"
+     class="nav-item {% if app == 'inventory' and current == 'low_stock' %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+    </svg>
+    Low stock
+  </a>
+
+  {# ================= Sales ================= #}
+  <p class="mt-4 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+    Sales
+  </p>
+
+  <a href="{% url 'sales:my_sales' %}"
+     class="nav-item {% if app == 'sales' and current == 'my_sales' %}nav-item-active{% endif %}">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    My sales
+  </a>
+
+  {% if is_manager_or_above %}
+    <a href="{% url 'sales:all_sales' %}"
+       class="nav-item {% if app == 'sales' and current == 'all_sales' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+      </svg>
+      All sales
+    </a>
+  {% endif %}
+
+  {# ================= Reports ================= #}
+  {% if is_manager_or_above %}
+    <p class="mt-4 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      Reports
+    </p>
+
+    <a href="{% url 'reports:sales_report' %}"
+       class="nav-item {% if app == 'reports' and current == 'sales_report' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      Sales report
+    </a>
+
+    <a href="{% url 'reports:salesperson_report' %}"
+       class="nav-item {% if app == 'reports' and current == 'salesperson_report' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Salespeople
+    </a>
+
+    <a href="{% url 'reports:inventory_report' %}"
+       class="nav-item {% if app == 'reports' and current == 'inventory_report' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Inventory report
+    </a>
+
+    <a href="{% url 'reports:low_stock_report' %}"
+       class="nav-item {% if app == 'reports' and current == 'low_stock_report' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+      </svg>
+      Low stock report
+    </a>
+  {% endif %}
+
+  {# ================= Admin ================= #}
+  {% if is_owner %}
+    <p class="mt-4 px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      Admin
+    </p>
+
+    <a href="{% url 'accounts:staff_list' %}"
+       class="nav-item {% if app == 'accounts' and 'staff' in current %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Staff
+    </a>
+
+    <a href="{% url 'accounts:business_settings' %}"
+       class="nav-item {% if current == 'business_settings' %}nav-item-active{% endif %}">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Settings
+    </a>
+  {% endif %}
+</nav>
+
+<div class="border-t border-surface-border p-3 dark:border-surface-dark-border">
+  <p class="px-2 text-[11px] text-slate-400">
+    v1.0 · {{ business_currency }}
+  </p>
+</div>
+
+{% endwith %}

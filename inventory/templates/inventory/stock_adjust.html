@@ -1,0 +1,263 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Adjust stock · {{ product.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Header ================= #}
+<div class="mb-6">
+  <a href="{% url 'inventory:product_detail' product.pk %}"
+     class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to {{ product.name }}
+  </a>
+  <h1 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">
+    Adjust stock
+  </h1>
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    Every adjustment is logged with your name and a timestamp.
+  </p>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+  {# ================= Current stock snapshot ================= #}
+  <div class="space-y-6 lg:col-span-1">
+
+    <div class="card">
+      <div class="card-body text-center">
+
+        {# Current stock big number #}
+        <div class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Current stock
+        </div>
+        <div class="mt-3 flex items-baseline justify-center gap-2">
+          <span class="text-5xl font-bold {% if product.is_low_stock %}text-amber-600 dark:text-amber-400{% else %}text-slate-900 dark:text-slate-100{% endif %}">
+            {{ product.quantity }}
+          </span>
+          <span class="text-base text-slate-500 dark:text-slate-400">{{ product.unit }}</span>
+        </div>
+
+        {% if product.is_low_stock %}
+          <div class="mt-3 flex justify-center">
+            <span class="badge-amber">
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+              </svg>
+              Below reorder level
+            </span>
+          </div>
+        {% endif %}
+
+        {# Meta #}
+        <dl class="mt-6 space-y-3 border-t border-surface-border pt-5 text-left text-sm dark:border-surface-dark-border">
+          <div class="flex items-center justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">SKU</dt>
+            <dd>
+              <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                {{ product.sku }}
+              </code>
+            </dd>
+          </div>
+          <div class="flex items-center justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Reorder level</dt>
+            <dd class="text-slate-900 dark:text-slate-100">
+              {{ product.reorder_level }} {{ product.unit }}
+            </dd>
+          </div>
+          {% if product.category %}
+            <div class="flex items-center justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">Category</dt>
+              <dd class="text-slate-900 dark:text-slate-100">{{ product.category.name }}</dd>
+            </div>
+          {% endif %}
+        </dl>
+
+        <a href="{% url 'inventory:product_detail' product.pk %}"
+           class="btn-secondary mt-6 w-full justify-center">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+          View product
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# ================= Adjustment form ================= #}
+  <div class="lg:col-span-2">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Adjustment</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Choose a mode below.
+        </p>
+      </div>
+
+      <form method="post" novalidate data-guard-submit data-loading-text="Applying…"
+            x-data="stockAdjust({{ product.quantity }})">
+        {% csrf_token %}
+
+        <div class="card-body space-y-5">
+
+          {# ---- Mode: visual radio group ---- #}
+          <div>
+            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Mode
+            </label>
+            <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+
+              {# Add #}
+              <label class="relative flex cursor-pointer rounded-md border border-surface-border bg-white p-3 transition hover:border-emerald-500 dark:border-surface-dark-border dark:bg-surface-dark-muted">
+                <input type="radio" name="{{ form.mode.name }}" value="add"
+                       x-model="mode" class="sr-only">
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-2">
+                    <span :class="mode === 'add' ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'"
+                          class="flex h-2 w-2 rounded-full transition"></span>
+                    <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="text-sm font-medium text-slate-900 dark:text-slate-100">Add</span>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    Receive new stock
+                  </span>
+                </div>
+              </label>
+
+              {# Remove #}
+              <label class="relative flex cursor-pointer rounded-md border border-surface-border bg-white p-3 transition hover:border-red-500 dark:border-surface-dark-border dark:bg-surface-dark-muted">
+                <input type="radio" name="{{ form.mode.name }}" value="remove"
+                       x-model="mode" class="sr-only">
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-2">
+                    <span :class="mode === 'remove' ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-600'"
+                          class="flex h-2 w-2 rounded-full transition"></span>
+                    <svg class="h-4 w-4 text-red-600 dark:text-red-400"
+                         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                    </svg>
+                    <span class="text-sm font-medium text-slate-900 dark:text-slate-100">Remove</span>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    Loss, damage, internal use
+                  </span>
+                </div>
+              </label>
+
+              {# Set #}
+              <label class="relative flex cursor-pointer rounded-md border border-surface-border bg-white p-3 transition hover:border-blue-500 dark:border-surface-dark-border dark:bg-surface-dark-muted">
+                <input type="radio" name="{{ form.mode.name }}" value="set"
+                       x-model="mode" class="sr-only">
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-2">
+                    <span :class="mode === 'set' ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'"
+                          class="flex h-2 w-2 rounded-full transition"></span>
+                    <svg class="h-4 w-4 text-blue-600 dark:text-blue-400"
+                         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                    <span class="text-sm font-medium text-slate-900 dark:text-slate-100">Set</span>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    Stock count (exact)
+                  </span>
+                </div>
+              </label>
+            </div>
+            {% for e in form.mode.errors %}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+            {% endfor %}
+          </div>
+
+          {# ---- Quantity ---- #}
+          <div>
+            <label for="{{ form.quantity.id_for_label }}"
+                   class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Quantity <span class="text-red-500">*</span>
+            </label>
+            <div class="mt-1.5">
+              {{ form.quantity }}
+            </div>
+            {# Live preview #}
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <template x-if="mode === 'add'">
+                <span>
+                  New stock will be
+                  <strong class="text-emerald-600 dark:text-emerald-400"
+                          x-text="Number(current) + Number(delta || 0)"></strong>
+                  {{ product.unit }}
+                </span>
+              </template>
+              <template x-if="mode === 'remove'">
+                <span>
+                  New stock will be
+                  <strong :class="Number(current) - Number(delta || 0) < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-slate-100'"
+                          x-text="Number(current) - Number(delta || 0)"></strong>
+                  {{ product.unit }}
+                </span>
+              </template>
+              <template x-if="mode === 'set'">
+                <span>Set to the exact physical count.</span>
+              </template>
+            </p>
+            {% for e in form.quantity.errors %}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+            {% endfor %}
+          </div>
+
+          {# ---- Reason ---- #}
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              {% include "partials/field.html" with field=form.reason %}
+            </div>
+            <div>
+              {% include "partials/field.html" with field=form.reference %}
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer flex justify-end gap-3">
+          <a href="{% url 'inventory:product_detail' product.pk %}" class="btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn-primary">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Apply adjustment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function stockAdjust(initial) {
+  return {
+    mode: 'add',
+    current: Number(initial) || 0,
+    delta: 0,
+    init() {
+      // Wire quantity input for live preview
+      const q = document.getElementById('{{ form.quantity.id_for_label }}');
+      if (q) {
+        q.addEventListener('input', (e) => { this.delta = e.target.value; });
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

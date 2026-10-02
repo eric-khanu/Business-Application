@@ -1,0 +1,29 @@
+{# partials/pagination.html — Tailwind pagination. Requires page_obj in context. #}
+{% if page_obj.paginator.num_pages > 1 %}
+  <div class="flex items-center justify-between border-t border-surface-border px-4 py-3 dark:border-surface-dark-border">
+    <div class="text-xs text-slate-500 dark:text-slate-400">
+      Showing <span class="font-medium">{{ page_obj.start_index }}</span>–<span class="font-medium">{{ page_obj.end_index }}</span>
+      of <span class="font-medium">{{ page_obj.paginator.count }}</span>
+    </div>
+
+    <nav class="flex items-center gap-1" aria-label="Pagination">
+      {% if page_obj.has_previous %}
+        <a href="?{% querystring page=page_obj.previous_page_number %}"
+           class="btn-ghost btn-sm">Previous</a>
+      {% else %}
+        <span class="btn-ghost btn-sm opacity-40 cursor-not-allowed">Previous</span>
+      {% endif %}
+
+      <span class="px-3 text-xs text-slate-500 dark:text-slate-400">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+
+      {% if page_obj.has_next %}
+        <a href="?{% querystring page=page_obj.next_page_number %}"
+           class="btn-ghost btn-sm">Next</a>
+      {% else %}
+        <span class="btn-ghost btn-sm opacity-40 cursor-not-allowed">Next</span>
+      {% endif %}
+    </nav>
+  </div>
+{% endif %}

@@ -1,0 +1,112 @@
+/* static/css/input.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------
+   Design tokens (CSS custom properties for JS access)
+   --------------------------------------------------------------- */
+@layer base {
+  :root {
+    --color-bg: theme("colors.surface.muted");
+    --color-fg: theme("colors.slate.900");
+  }
+  .dark {
+    --color-bg: theme("colors.surface.dark");
+    --color-fg: theme("colors.slate.100");
+  }
+
+  html { @apply antialiased; }
+  body { @apply bg-surface-muted text-slate-900 dark:bg-surface-dark dark:text-slate-100; }
+
+  /* Focus rings — accessible by default */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white dark:ring-offset-surface-dark;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Component classes — reusable in templates
+   --------------------------------------------------------------- */
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md
+           px-3.5 py-2 text-sm font-medium transition-colors
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700
+           dark:bg-brand-500 dark:hover:bg-brand-600;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-surface-border
+           hover:bg-slate-50
+           dark:bg-surface-dark-muted dark:text-slate-200
+           dark:border-surface-dark-border dark:hover:bg-slate-700;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100
+           dark:text-slate-300 dark:hover:bg-slate-800;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .btn-lg { @apply px-5 py-2.5 text-base; }
+
+  /* Inputs */
+  .input {
+    @apply block w-full rounded-md border border-surface-border bg-white
+           px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30
+           disabled:cursor-not-allowed disabled:bg-slate-50
+           dark:border-surface-dark-border dark:bg-surface-dark-muted
+           dark:text-slate-100 dark:placeholder:text-slate-500
+           dark:focus:border-brand-400;
+  }
+  .input-error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-500/30;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-lg border border-surface-border bg-white shadow-card
+           dark:border-surface-dark-border dark:bg-surface-dark-muted;
+  }
+  .card-header { @apply border-b border-surface-border px-5 py-3.5 dark:border-surface-dark-border; }
+  .card-body   { @apply px-5 py-4; }
+  .card-footer { @apply border-t border-surface-border px-5 py-3.5 dark:border-surface-dark-border; }
+
+  /* Badges */
+  .badge       { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium; }
+  .badge-green { @apply badge bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400; }
+  .badge-red   { @apply badge bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400; }
+  .badge-amber { @apply badge bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400; }
+  .badge-blue  { @apply badge bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400; }
+  .badge-gray  { @apply badge bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300; }
+
+  /* Sidebar nav items */
+  .nav-item {
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium
+           text-slate-700 hover:bg-slate-100 hover:text-slate-900
+           dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white
+           transition-colors;
+  }
+  .nav-item-active {
+    @apply bg-brand-50 text-brand-700
+           dark:bg-brand-500/10 dark:text-brand-400;
+  }
+}
+
+/* ---------------------------------------------------------------
+   HTMX niceties
+   --------------------------------------------------------------- */
+@layer utilities {
+  .htmx-indicator { @apply opacity-0 transition-opacity duration-200; }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator { @apply opacity-100; }
+
+  /* Prevent flashing on hx-boost navigation */
+  .htmx-swapping { @apply opacity-50 transition-opacity duration-100; }
+}

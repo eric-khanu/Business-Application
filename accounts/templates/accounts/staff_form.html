@@ -1,0 +1,95 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Page header ================= #}
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <a href="{% url 'accounts:staff_list' %}"
+       class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to staff
+    </a>
+    <h1 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ title }}</h1>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate
+      data-guard-submit data-loading-text="Saving…">
+
+  {% csrf_token %}
+
+  {# Non-field errors #}
+  {% if form.non_field_errors %}
+    <div class="mb-6 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800
+                dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+      <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+      </svg>
+      <div class="flex-1">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+    {# ================= Account ================= #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Account</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Login credentials and role.
+        </p>
+      </div>
+      <div class="card-body space-y-4">
+        {% for field in form.account_fields %}
+          {% include "partials/field.html" with field=field %}
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ================= Contact & Profile ================= #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact &amp; profile</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Optional details shown in the staff directory.
+        </p>
+      </div>
+      <div class="card-body space-y-4">
+        {% for field in form.profile_fields %}
+          {% include "partials/field.html" with field=field %}
+        {% endfor %}
+
+        {% if staff and staff.profile_picture %}
+          <div class="flex items-center gap-3 rounded-md border border-surface-border bg-slate-50 p-3 dark:border-surface-dark-border dark:bg-surface-dark">
+            <img src="{{ staff.profile_picture.url }}" alt=""
+                 class="h-12 w-12 rounded-full object-cover">
+            <div class="text-xs text-slate-500 dark:text-slate-400">
+              Current picture. Upload a new one to replace it.
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# ================= Actions ================= #}
+  <div class="mt-6 flex items-center justify-end gap-3">
+    <a href="{% url 'accounts:staff_list' %}" class="btn-secondary">Cancel</a>
+    <button type="submit" class="btn-primary">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      {{ submit_label }}
+    </button>
+  </div>
+</form>
+{% endblock %}

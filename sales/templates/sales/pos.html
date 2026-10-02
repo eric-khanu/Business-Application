@@ -1,0 +1,503 @@
+{% extends "base_fullscreen.html" %}
+{% load static %}
+
+{% block title %}Point of Sale · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{{ products_payload|json_script:"products-data" }}
+{{ initial_cart|json_script:"initial-cart-data" }}
+<div id="pos-tax-rate"
+     data-tax-rate="{{ current_business.tax_rate|default:'0' }}"
+     hidden></div>
+
+<div class="flex h-full flex-col overflow-hidden"
+     x-data="posApp()"
+     x-init="init()">
+
+  {# ================== TOP BAR: search + meta ================== #}
+  <div class="flex items-center gap-3 border-b border-surface-border bg-white px-4 py-3 dark:border-surface-dark-border dark:bg-surface-dark-muted sm:px-6">
+
+    {# Search / barcode input #}
+    <div class="relative flex-1">
+      <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+      </svg>
+      <input id="pos-search"
+             type="text"
+             x-model="search"
+             @keydown.escape="search = ''"
+             placeholder="Search or scan barcode… (press / to focus)"
+             autocomplete="off"
+             class="input pl-9 pr-20 text-base">
+      <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-slate-400">
+        <kbd class="rounded border border-slate-300 px-1.5 py-0.5 font-sans dark:border-slate-600">/</kbd>
+        <span>to search</span>
+      </div>
+    </div>
+
+    {# Meta: currency + tax #}
+    <div class="hidden shrink-0 items-center gap-4 text-sm text-slate-500 dark:text-slate-400 md:flex">
+      <div class="text-right">
+        <div class="text-xs uppercase tracking-wider">Currency</div>
+        <div class="font-medium text-slate-900 dark:text-slate-100">
+          {{ business_currency|default:"USD" }}
+        </div>
+      </div>
+      <div class="text-right">
+        <div class="text-xs uppercase tracking-wider">Tax</div>
+        <div class="font-medium text-slate-900 dark:text-slate-100">
+          {{ current_business.tax_rate|default:"0" }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ================== MAIN: products + cart ================== #}
+  <div class="flex flex-1 overflow-hidden">
+
+    {# ------- LEFT: product grid ------- #}
+    <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+
+        <template x-for="p in filteredProducts" :key="'product-' + p.id">
+          <button type="button"
+                  @click="addToCart(p)"
+                  :disabled="p.quantity <= 0"
+                  :class="p.quantity <= 0
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-brand-500 hover:shadow-md active:scale-[0.98]'"
+                  class="card flex flex-col items-start gap-2 p-3 text-left transition disabled:cursor-not-allowed">
+            <div class="flex w-full items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100"
+                   x-text="p.name"></p>
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400"
+                   x-text="p.sku || '—'"></p>
+              </div>
+              <span :class="p.quantity <= (p.reorder_level || 0)
+                       ? 'badge-amber'
+                       : 'badge-gray'">
+                <span x-text="p.quantity"></span>
+              </span>
+            </div>
+
+            <div class="mt-auto w-full pt-2">
+              <p class="text-base font-semibold text-brand-600 dark:text-brand-400">
+                <span x-text="fmtMoney(p.selling_price)"></span>
+              </p>
+            </div>
+          </button>
+        </template>
+
+        {# Empty state — search returned nothing #}
+        <template x-if="products.length > 0 && filteredProducts.length === 0">
+          <div class="col-span-full py-16 text-center">
+            <svg class="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600"
+                 fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+            </svg>
+            <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+              No products match "<span x-text="search" class="font-medium"></span>"
+            </p>
+          </div>
+        </template>
+
+        {# Empty state — no products at all #}
+        {% if not products %}
+          <div class="col-span-full py-16 text-center">
+            <svg class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600"
+                 fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <p class="mt-4 text-sm font-medium text-slate-900 dark:text-slate-100">No products yet</p>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <a href="{% url 'inventory:product_list' %}"
+                 class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                Add products to inventory
+              </a> to start selling.
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ------- RIGHT: cart ------- #}
+    <aside class="hidden w-96 shrink-0 flex-col border-l border-surface-border bg-white dark:border-surface-dark-border dark:bg-surface-dark-muted lg:flex">
+
+      {# Cart header #}
+      <div class="flex items-center justify-between border-b border-surface-border px-4 py-3 dark:border-surface-dark-border">
+        <div class="flex items-center gap-2">
+          <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Cart
+            <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                  x-text="cartCount"></span>
+          </h2>
+        </div>
+        <button type="button"
+                x-show="cart.length > 0"
+                @click="confirmClear()"
+                class="btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                title="Clear cart">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/>
+          </svg>
+        </button>
+      </div>
+
+      {# Cart rows #}
+      <div class="flex-1 overflow-y-auto">
+        <template x-if="cart.length === 0">
+          <div class="flex h-full flex-col items-center justify-center px-6 py-12 text-center">
+            <svg class="h-12 w-12 text-slate-300 dark:text-slate-600"
+                 fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+            <p class="mt-3 text-sm font-medium text-slate-900 dark:text-slate-100">Cart is empty</p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Click a product to add it.</p>
+          </div>
+        </template>
+
+        <template x-if="cart.length > 0">
+          <ul class="divide-y divide-surface-border dark:divide-surface-dark-border">
+            <template x-for="(item, idx) in cart" :key="'cart-' + item.product_id">
+              <li class="flex items-start gap-3 px-4 py-3">
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100"
+                     x-text="item.name"></p>
+                  <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    <span x-text="fmtMoney(item.unit_price)"></span>
+                    <span x-show="item.quantity > 1" class="ml-1">
+                      × <span x-text="item.quantity"></span>
+                    </span>
+                  </p>
+                </div>
+
+                {# Quantity stepper #}
+                <div class="flex items-center rounded-md border border-surface-border dark:border-surface-dark-border">
+                  <button type="button"
+                          @click="decrement(idx)"
+                          class="flex h-8 w-8 items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/>
+                    </svg>
+                  </button>
+                  <input type="number"
+                         min="1"
+                         :value="item.quantity"
+                         @change="setQty(idx, $event.target.value)"
+                         class="h-8 w-10 border-0 bg-transparent px-0 text-center text-sm font-medium focus:ring-0">
+                  <button type="button"
+                          @click="increment(idx)"
+                          class="flex h-8 w-8 items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {# Line total + remove #}
+                <div class="flex flex-col items-end gap-1">
+                  <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <span x-text="fmtMoney(item.quantity * item.unit_price)"></span>
+                  </p>
+                  <button type="button"
+                          @click="removeItem(idx)"
+                          class="text-xs text-red-600 hover:underline dark:text-red-400">
+                    Remove
+                  </button>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+      </div>
+
+      {# Cart footer: totals + checkout #}
+      <div class="border-t border-surface-border bg-slate-50 px-4 py-4 dark:border-surface-dark-border dark:bg-surface-dark">
+
+        <dl class="space-y-1.5 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Subtotal</dt>
+            <dd class="text-slate-900 dark:text-slate-100">
+              <span x-text="fmtMoney(subtotal)"></span>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">
+              Tax (<span x-text="taxRate"></span>%)
+            </dt>
+            <dd class="text-slate-900 dark:text-slate-100">
+              <span x-text="fmtMoney(tax)"></span>
+            </dd>
+          </div>
+          <div class="flex justify-between" x-show="discount > 0">
+            <dt class="text-slate-500 dark:text-slate-400">Discount</dt>
+            <dd class="text-emerald-600 dark:text-emerald-400">
+              − <span x-text="fmtMoney(discount)"></span>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-3 border-t border-surface-border pt-3 dark:border-surface-dark-border">
+          <div class="flex items-baseline justify-between">
+            <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Total</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <span class="text-sm font-normal text-slate-500 dark:text-slate-400">{{ business_currency|default:"USD" }}</span>
+              <span x-text="fmtMoney(total)"></span>
+            </span>
+          </div>
+        </div>
+
+        <button type="button"
+                @click="openCheckout()"
+                :disabled="cart.length === 0"
+                class="btn-primary mt-4 w-full btn-lg">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          Checkout
+          <kbd class="ml-1 rounded border border-white/30 px-1.5 py-0.5 text-xs font-normal">↵</kbd>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  {# ================== MOBILE CART SHEET ================== #}
+  <div class="lg:hidden">
+    <div class="pointer-events-none fixed inset-x-0 bottom-0 z-20 p-3">
+      <button type="button"
+              @click="mobileCartOpen = true"
+              :disabled="cart.length === 0"
+              class="pointer-events-auto flex w-full items-center justify-between rounded-lg bg-brand-600 px-5 py-3 text-white shadow-lg disabled:cursor-not-allowed disabled:bg-slate-400">
+        <span class="flex items-center gap-2 text-sm font-medium">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          View cart (<span x-text="cartCount"></span>)
+        </span>
+        <span class="text-base font-semibold">
+          {{ business_currency|default:"USD" }} <span x-text="fmtMoney(total)"></span>
+        </span>
+      </button>
+    </div>
+
+    <div x-show="mobileCartOpen"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @keydown.escape.window="mobileCartOpen = false"
+         class="fixed inset-0 z-30 bg-black/50 lg:hidden">
+      <div class="absolute inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl bg-white dark:bg-surface-dark-muted"
+           x-transition:enter="transition ease-out duration-200"
+           x-transition:enter-start="translate-y-full"
+           x-transition:enter-end="translate-y-0"
+           x-transition:leave="transition ease-in duration-150"
+           x-transition:leave-start="translate-y-0"
+           x-transition:leave-end="translate-y-full">
+        <div class="flex items-center justify-between border-b border-surface-border px-4 py-3 dark:border-surface-dark-border">
+          <h3 class="text-sm font-semibold">Cart</h3>
+          <button type="button" @click="mobileCartOpen = false" class="btn-ghost btn-sm">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="max-h-[60vh] overflow-y-auto px-4 py-3">
+          <template x-for="(item, idx) in cart" :key="'mcart-' + item.product_id">
+            <div class="flex items-center gap-3 py-3">
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium" x-text="item.name"></p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  <span x-text="fmtMoney(item.unit_price)"></span> ×
+                  <span x-text="item.quantity"></span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="decrement(idx)" class="btn-ghost btn-sm">−</button>
+                <span class="w-6 text-center text-sm font-medium" x-text="item.quantity"></span>
+                <button type="button" @click="increment(idx)" class="btn-ghost btn-sm">+</button>
+              </div>
+              <button type="button" @click="removeItem(idx)"
+                      class="btn-ghost btn-sm text-red-600 dark:text-red-400">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="border-t border-surface-border px-4 py-3 dark:border-surface-dark-border">
+          <div class="flex items-baseline justify-between">
+            <span class="text-sm text-slate-500 dark:text-slate-400">Total</span>
+            <span class="text-xl font-bold">
+              {{ business_currency|default:"USD" }} <span x-text="fmtMoney(total)"></span>
+            </span>
+          </div>
+          <button type="button" @click="openCheckout()" class="btn-primary mt-3 w-full">
+            Checkout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ================== CHECKOUT MODAL ================== #}
+  <div x-show="checkoutOpen"
+       x-cloak
+       @keydown.escape.window="checkoutOpen = false"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-surface-dark-muted"
+         @click.outside="checkoutOpen = false">
+
+      <div class="flex items-center justify-between border-b border-surface-border px-5 py-4 dark:border-surface-dark-border">
+        <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Complete sale</h2>
+        <button type="button" @click="checkoutOpen = false" class="btn-ghost btn-sm">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <form method="post" id="sale-form" @submit="submitSale" novalidate>
+        {% csrf_token %}
+
+        <div class="space-y-4 px-5 py-4">
+
+          {# Total recap #}
+          <div class="rounded-md bg-slate-50 p-4 dark:bg-surface-dark">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500 dark:text-slate-400">Subtotal</span>
+              <span x-text="fmtMoney(subtotal)"></span>
+            </div>
+            <div class="mt-1 flex justify-between text-sm">
+              <span class="text-slate-500 dark:text-slate-400">
+                Tax (<span x-text="taxRate"></span>%)
+              </span>
+              <span x-text="fmtMoney(tax)"></span>
+            </div>
+            <div class="mt-1 flex justify-between text-sm" x-show="discount > 0">
+              <span class="text-slate-500 dark:text-slate-400">Discount</span>
+              <span class="text-emerald-600 dark:text-emerald-400">
+                − <span x-text="fmtMoney(discount)"></span>
+              </span>
+            </div>
+            <div class="mt-3 flex justify-between border-t border-surface-border pt-3 dark:border-surface-dark-border">
+              <span class="text-sm font-medium">Total</span>
+              <span class="text-xl font-bold">
+                <span x-text="fmtMoney(total)"></span>
+              </span>
+            </div>
+          </div>
+
+          {# Hidden cart data #}
+          {{ form.cart }}
+
+          {# Payment method #}
+          <div>
+            <label for="{{ form.payment_method.id_for_label }}"
+                   class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Payment method
+            </label>
+            <div class="mt-1.5">
+              {{ form.payment_method }}
+            </div>
+            {% for e in form.payment_method.errors %}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+            {% endfor %}
+          </div>
+
+          {# Cash tendered (shown only for cash) #}
+          <div x-show="paymentMethod === 'cash'" x-cloak>
+            <label for="{{ form.amount_paid.id_for_label }}"
+                   class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Cash tendered
+            </label>
+            <div class="mt-1.5">
+              {{ form.amount_paid }}
+            </div>
+            {% for e in form.amount_paid.errors %}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+            {% endfor %}
+
+            <div class="mt-3 flex items-center justify-between rounded-md bg-emerald-50 px-3 py-2 dark:bg-emerald-900/20">
+              <span class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Change due</span>
+              <span class="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                <span x-text="fmtMoney(changeDue)"></span>
+              </span>
+            </div>
+          </div>
+
+          {# Discount #}
+          <div>
+            <label for="{{ form.discount.id_for_label }}"
+                   class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Discount
+            </label>
+            <div class="mt-1.5">
+              {{ form.discount }}
+            </div>
+            {% for e in form.discount.errors %}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+            {% endfor %}
+          </div>
+
+          {# Notes #}
+          <div>
+            <label for="{{ form.notes.id_for_label }}"
+                   class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Notes <span class="text-slate-400">(optional)</span>
+            </label>
+            <div class="mt-1.5">
+              {{ form.notes }}
+            </div>
+          </div>
+
+          {# Non-field errors #}
+          {% for e in form.non_field_errors %}
+            <div class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+              {{ e }}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-surface-border px-5 py-4 dark:border-surface-dark-border">
+          <button type="button" @click="checkoutOpen = false" class="btn-secondary">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="btn-primary"
+                  :disabled="submitting">
+            <svg x-show="!submitting" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <svg x-show="submitting" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span x-text="submitting ? 'Processing…' : 'Complete sale'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

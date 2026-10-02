@@ -1,0 +1,113 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+<div class="mx-auto max-w-3xl">
+
+  {# ================= Header ================= #}
+  <div class="mb-6">
+    <a href="{% url 'inventory:supplier_list' %}"
+       class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to suppliers
+    </a>
+    <h1 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ title }}</h1>
+    {% if supplier %}
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        Editing <strong>{{ supplier.name }}</strong>
+      </p>
+    {% endif %}
+  </div>
+
+  <form method="post" novalidate data-guard-submit data-loading-text="Saving…">
+    {% csrf_token %}
+
+    {# Non-field errors #}
+    {% if form.non_field_errors %}
+      <div class="mb-6 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+        <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+        </svg>
+        <div class="flex-1">
+          {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {# ================= Company ================= #}
+    <div class="card mb-6">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Company</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Business name and primary contact.
+        </p>
+      </div>
+      <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          {% include "partials/field.html" with field=form.name %}
+        </div>
+        <div class="sm:col-span-2">
+          {% include "partials/field.html" with field=form.contact_person %}
+        </div>
+      </div>
+    </div>
+
+    {# ================= Contact ================= #}
+    <div class="card mb-6">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact</h2>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          How to reach them for orders.
+        </p>
+      </div>
+      <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {% include "partials/field.html" with field=form.phone %}
+        {% include "partials/field.html" with field=form.email %}
+        <div class="sm:col-span-2">
+          {% include "partials/field.html" with field=form.address %}
+        </div>
+      </div>
+    </div>
+
+    {# ================= Status ================= #}
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Status</h2>
+      </div>
+      <div class="card-body">
+        <label for="{{ form.is_active.id_for_label }}"
+               class="flex items-center gap-3 cursor-pointer">
+          {{ form.is_active }}
+          <div>
+            <div class="text-sm font-medium text-slate-900 dark:text-slate-100">Active</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">
+              Inactive suppliers are hidden from product forms but their history is preserved.
+            </div>
+          </div>
+        </label>
+        {% for e in form.is_active.errors %}
+          <p class="mt-2 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ================= Actions ================= #}
+    <div class="mt-6 flex items-center justify-end gap-3">
+      <a href="{% url 'inventory:supplier_list' %}" class="btn-secondary">Cancel</a>
+      <button type="submit" class="btn-primary">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        {% if supplier %}Save changes{% else %}Create supplier{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

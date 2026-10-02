@@ -1,0 +1,116 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Low stock · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Page header ================= #}
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2">
+      <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Low stock</h1>
+      {% if page.paginator.count %}
+        <span class="badge-amber">{{ page.paginator.count }} item{{ page.paginator.count|pluralize }}</span>
+      {% endif %}
+    </div>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Products at or below their reorder level
+    </p>
+  </div>
+  <a href="{% url 'reports:inventory_report' %}" class="btn-secondary">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Full inventory
+  </a>
+</div>
+
+{# ================= Table ================= #}
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+      <thead class="bg-slate-50 dark:bg-surface-dark">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</th>
+          <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 md:table-cell">Category</th>
+          <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 lg:table-cell">Supplier</th>
+          <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Current</th>
+          <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Reorder at</th>
+          <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Needed</th>
+          <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+        {% for p in page %}
+          <tr class="hover:bg-amber-50/50 dark:hover:bg-amber-900/10">
+            <td class="px-4 py-3">
+              <div class="font-medium text-slate-900 dark:text-slate-100">
+                {{ p.name }}
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">{{ p.sku }}</code>
+              </div>
+            </td>
+            <td class="hidden px-4 py-3 text-slate-700 dark:text-slate-300 md:table-cell">
+              {{ p.category.name|default:"—" }}
+            </td>
+            <td class="hidden px-4 py-3 text-slate-700 dark:text-slate-300 lg:table-cell">
+              {{ p.supplier.name|default:"—" }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <span class="font-semibold {% if p.quantity == 0 %}text-red-600 dark:text-red-400{% else %}text-amber-600 dark:text-amber-400{% endif %}">
+                {{ p.quantity }}
+              </span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">{{ p.unit }}</span>
+            </td>
+            <td class="px-4 py-3 text-right text-slate-500 dark:text-slate-400">
+              {{ p.reorder_level }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <span class="badge-red">+{{ p.reorder_level|add:p.quantity|add:"-2" }}</span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <a href="{% url 'inventory:stock_adjust' p.pk %}" class="btn-primary btn-sm">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Restock
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="px-4 py-16 text-center">
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                <svg class="h-7 w-7 text-emerald-600 dark:text-emerald-400"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p class="mt-4 text-sm font-medium text-slate-900 dark:text-slate-100">
+                All stocked up
+              </p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                No products are below their reorder level.
+              </p>
+              <a href="{% url 'reports:inventory_report' %}"
+                 class="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                View full inventory
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+    {% include "partials/pagination.html" with page_obj=page %}
+  {% endif %}
+</div>
+
+{% endblock %}

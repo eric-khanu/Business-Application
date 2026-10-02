@@ -1,0 +1,68 @@
+{% extends "base_app.html" %}
+
+{% block title %}Delete {{ category.name }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+<div class="mx-auto max-w-lg">
+
+  <div class="card border-red-200 dark:border-red-900/50">
+    <div class="card-body">
+
+      <div class="flex items-start gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <svg class="h-6 w-6 text-red-600 dark:text-red-400"
+               fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+          </svg>
+        </div>
+
+        <div class="flex-1">
+          <h1 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Delete this category?
+          </h1>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <strong class="text-slate-900 dark:text-slate-100">{{ category.name }}</strong>
+            will be removed. Products in this category
+            <strong>won't be deleted</strong> — they'll simply become uncategorized.
+          </p>
+        </div>
+      </div>
+
+      {% if category.product_count %}
+        <div class="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+          <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+            </svg>
+            <p class="text-xs text-amber-800 dark:text-amber-300">
+              <strong>{{ category.product_count }}</strong>
+              product{{ category.product_count|pluralize }} will lose this category assignment.
+            </p>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <a href="{% url 'inventory:category_list' %}" class="btn-secondary justify-center sm:justify-start">
+          Cancel
+        </a>
+        <form method="post" data-guard-submit data-loading-text="Deleting…">
+          {% csrf_token %}
+          <button type="submit" class="btn-danger w-full justify-center sm:w-auto">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/>
+            </svg>
+            Delete category
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

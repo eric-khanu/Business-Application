@@ -1,0 +1,75 @@
+{% extends "base_app.html" %}
+
+{% block title %}Delete {{ product.name }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+<div class="mx-auto max-w-lg">
+
+  <div class="card border-red-200 dark:border-red-900/50">
+    <div class="card-body">
+
+      <div class="flex items-start gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <svg class="h-6 w-6 text-red-600 dark:text-red-400"
+               fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+          </svg>
+        </div>
+
+        <div class="flex-1">
+          <h1 class="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Deactivate this product?
+          </h1>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <strong class="text-slate-900 dark:text-slate-100">{{ product.name }}</strong>
+            will be hidden from the POS and product list.
+            Its sales history and stock movements are preserved.
+          </p>
+        </div>
+      </div>
+
+      <dl class="mt-6 space-y-2 rounded-md bg-slate-50 px-4 py-3 text-sm dark:bg-surface-dark">
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">SKU</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">{{ product.sku }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">Current stock</dt>
+          <dd class="font-medium text-slate-900 dark:text-slate-100">
+            {{ product.quantity }} {{ product.unit }}
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-500 dark:text-slate-400">Category</dt>
+          <dd class="text-slate-900 dark:text-slate-100">
+            {{ product.category.name|default:"—" }}
+          </dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <a href="{% url 'inventory:product_list' %}" class="btn-secondary justify-center sm:justify-start">
+          Cancel
+        </a>
+        <form method="post" data-guard-submit data-loading-text="Deactivating…">
+          {% csrf_token %}
+          <button type="submit" class="btn-danger w-full justify-center sm:w-auto">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+            </svg>
+            Deactivate product
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+    Need it back? Deactivated products can be restored from the admin,
+    or by editing them and re-checking "Active".
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Suppliers · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Page header ================= #}
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+  <div>
+    <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Suppliers</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      {{ suppliers|length }} supplier{{ suppliers|length|pluralize }}
+    </p>
+  </div>
+  <a href="{% url 'inventory:supplier_create' %}" class="btn-primary">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    Add supplier
+  </a>
+</div>
+
+{# ================= Table ================= #}
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-surface-border dark:divide-surface-dark-border">
+      <thead class="bg-slate-50 dark:bg-surface-dark">
+        <tr>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Supplier</th>
+          <th scope="col" class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 md:table-cell">Contact</th>
+          <th scope="col" class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 lg:table-cell">Phone</th>
+          <th scope="col" class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 lg:table-cell">Email</th>
+          <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+          <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+        {% for s in suppliers %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-surface-dark">
+
+            {# ---- Name + avatar ---- #}
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>
+                  </svg>
+                </span>
+                <div class="min-w-0">
+                  <a href="{% url 'inventory:supplier_edit' s.pk %}"
+                     class="block truncate text-sm font-medium text-slate-900 hover:text-brand-600 dark:text-slate-100 dark:hover:text-brand-400">
+                    {{ s.name }}
+                  </a>
+                  {% if s.contact_person %}
+                    <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                      {{ s.contact_person }}
+                    </p>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+
+            {# ---- Contact ---- #}
+            <td class="hidden px-4 py-3 text-sm text-slate-600 dark:text-slate-400 md:table-cell">
+              {% if s.contact_person %}
+                {{ s.contact_person }}
+              {% else %}
+                <span class="text-slate-300 dark:text-slate-600">—</span>
+              {% endif %}
+            </td>
+
+            {# ---- Phone ---- #}
+            <td class="hidden px-4 py-3 text-sm lg:table-cell">
+              {% if s.phone %}
+                <a href="tel:{{ s.phone }}"
+                   class="text-slate-700 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400">
+                  {{ s.phone }}
+                </a>
+              {% else %}
+                <span class="text-slate-300 dark:text-slate-600">—</span>
+              {% endif %}
+            </td>
+
+            {# ---- Email ---- #}
+            <td class="hidden px-4 py-3 text-sm lg:table-cell">
+              {% if s.email %}
+                <a href="mailto:{{ s.email }}"
+                   class="text-slate-700 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400">
+                  {{ s.email }}
+                </a>
+              {% else %}
+                <span class="text-slate-300 dark:text-slate-600">—</span>
+              {% endif %}
+            </td>
+
+            {# ---- Status ---- #}
+            <td class="whitespace-nowrap px-4 py-3">
+              {% if s.is_active %}
+                <span class="badge-green">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                  Active
+                </span>
+              {% else %}
+                <span class="badge-gray">
+                  <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                  Inactive
+                </span>
+              {% endif %}
+            </td>
+
+            {# ---- Actions ---- #}
+            <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+              <div class="flex items-center justify-end gap-1">
+                <a href="{% url 'inventory:supplier_edit' s.pk %}"
+                   class="btn-ghost btn-sm"
+                   title="Edit {{ s.name }}"
+                   aria-label="Edit {{ s.name }}">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="px-4 py-12 text-center">
+              <svg class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600"
+                   fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 18.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>
+              </svg>
+              <p class="mt-3 text-sm font-medium text-slate-900 dark:text-slate-100">No suppliers yet</p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <a href="{% url 'inventory:supplier_create' %}"
+                   class="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                  Add your first supplier</a>
+                to track where products come from.
+              </p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

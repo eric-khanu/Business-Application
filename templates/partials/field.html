@@ -1,0 +1,29 @@
+{# partials/field.html #}
+<div class="space-y-1.5">
+  {% if field.field.widget.input_type != "hidden" %}
+    <label for="{{ field.id_for_label }}"
+           class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+      {{ field.label }}
+      {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+  {% endif %}
+
+  {% if unit %}
+    <div class="relative">
+      <div class="[&>input]:pr-16">{{ field }}</div>
+      <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
+        {{ unit }}
+      </span>
+    </div>
+  {% else %}
+    {{ field }}
+  {% endif %}
+
+  {% if field.help_text and field.field.widget.input_type != "hidden" %}
+    <p class="text-xs text-slate-500 dark:text-slate-400">{{ field.help_text|safe }}</p>
+  {% endif %}
+
+  {% for error in field.errors %}
+    <p class="text-xs text-red-600 dark:text-red-400">{{ error }}</p>
+  {% endfor %}
+</div>

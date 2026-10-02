@@ -1,0 +1,176 @@
+{% extends "base_app.html" %}
+
+{% block title %}Business settings · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Business settings</h1>
+  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+    These details appear on receipts, invoices, and throughout the app.
+  </p>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate
+      data-guard-submit data-loading-text="Saving…"
+      class="mx-auto max-w-4xl space-y-6">
+
+  {% csrf_token %}
+
+  {# Non-field errors #}
+  {% if form.non_field_errors %}
+    <div class="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800
+                dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+      <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+      </svg>
+      <div class="flex-1">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# ================= Section: Identity ================= #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Identity</h2>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        Business name and logo.
+      </p>
+    </div>
+
+    <div class="card-body space-y-4">
+
+      {# Current logo preview #}
+      {% if business.logo %}
+        <div class="flex items-center gap-4 rounded-md border border-surface-border bg-slate-50 p-3 dark:border-surface-dark-border dark:bg-surface-dark">
+          <img src="{{ business.logo.url }}" alt="Current logo"
+               class="h-16 w-16 rounded object-contain bg-white p-1 dark:bg-white/90">
+          <div class="text-xs text-slate-500 dark:text-slate-400">
+            Current logo. Upload a new one to replace it.
+          </div>
+        </div>
+      {% endif %}
+
+      {% include "partials/field.html" with field=form.name %}
+
+      {# Slug is auto-generated and read-only — show for reference #}
+      {% if business.slug %}
+        <div>
+          <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+            URL slug
+          </label>
+          <div class="mt-1.5 flex items-center gap-2 rounded-md border border-surface-border bg-slate-50 px-3 py-2 dark:border-surface-dark-border dark:bg-surface-dark">
+            <code class="text-xs text-slate-600 dark:text-slate-400">
+              {{ business.slug }}
+            </code>
+          </div>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Auto-generated from your business name.
+          </p>
+        </div>
+      {% endif %}
+
+      {% include "partials/field.html" with field=form.logo %}
+    </div>
+  </div>
+
+  {# ================= Section: Contact ================= #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact</h2>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        Shown on invoices and receipts.
+      </p>
+    </div>
+
+    <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {% include "partials/field.html" with field=form.email %}
+      {% include "partials/field.html" with field=form.phone1 %}
+      {% include "partials/field.html" with field=form.phone2 %}
+
+      <div class="sm:col-span-2">
+        {% include "partials/field.html" with field=form.address %}
+      </div>
+    </div>
+  </div>
+
+  {# ================= Section: Preferences ================= #}
+  <div class="card">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Preferences</h2>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+        Applied across the app — pricing, taxes, and formatting.
+      </p>
+    </div>
+
+    <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+      {# Tax rate with % suffix #}
+      <div>
+        <label for="{{ form.tax_rate.id_for_label }}"
+               class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+          {{ form.tax_rate.label }}
+          {% if form.tax_rate.field.required %}<span class="text-red-500">*</span>{% endif %}
+        </label>
+        <div class="relative mt-1.5">
+          <input type="number"
+                 name="{{ form.tax_rate.name }}"
+                 id="{{ form.tax_rate.id_for_label }}"
+                 value="{{ form.tax_rate.value|default_if_none:'' }}"
+                 step="0.01" min="0" max="100"
+                 class="input pr-10 {% if form.tax_rate.errors %}input-error{% endif %}">
+          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+            %
+          </span>
+        </div>
+        {% if form.tax_rate.help_text %}
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.tax_rate.help_text }}</p>
+        {% endif %}
+        {% for e in form.tax_rate.errors %}
+          <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ e }}</p>
+        {% endfor %}
+      </div>
+
+      {# Currency #}
+      {% include "partials/field.html" with field=form.currency %}
+    </div>
+  </div>
+
+  {# ================= Actions ================= #}
+  <div class="flex items-center justify-end gap-3">
+    <a href="{% url 'accounts:profile' %}" class="btn-secondary">Cancel</a>
+    <button type="submit" class="btn-primary">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Save settings
+    </button>
+  </div>
+
+  {# ================= Danger zone ================= #}
+  <div class="card border-red-200 dark:border-red-900/50">
+    <div class="card-header">
+      <h2 class="text-sm font-semibold text-red-700 dark:text-red-400">Danger zone</h2>
+    </div>
+    <div class="card-body flex items-center justify-between gap-4">
+      <div>
+        <p class="text-sm font-medium text-slate-900 dark:text-slate-100">
+          Delete this business
+        </p>
+        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Permanently removes all data — staff, products, orders, history.
+        </p>
+      </div>
+      {# Wire this to a support email or a soft-delete flow #}
+      <button type="button" disabled
+              class="btn-danger opacity-50 cursor-not-allowed shrink-0"
+              title="Contact support to delete a business">
+        Delete business
+      </button>
+    </div>
+  </div>
+
+</form>
+{% endblock %}

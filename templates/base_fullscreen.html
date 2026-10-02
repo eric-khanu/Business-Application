@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block body_class %}overflow-hidden{% endblock %}
+
+{% block shell %}
+  <div class="flex h-full flex-col">
+    {% include "partials/navbar.html" %}
+
+    <main id="main-content" class="flex-1 overflow-hidden">
+      <div class="h-full">
+        {% include "partials/messages.html" %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+{% endblock %}

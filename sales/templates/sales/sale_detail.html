@@ -1,0 +1,241 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Sale {{ sale.reference }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Header ================= #}
+<div class="mb-6">
+  <a href="{% if can_manage %}{% url 'sales:all_sales' %}{% else %}{% url 'sales:my_sales' %}{% endif %}"
+     class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to sales
+  </a>
+
+  <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+        Sale <span class="font-mono text-brand-600 dark:text-brand-400">{{ sale.reference }}</span>
+      </h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {{ sale.created_at|date:"l, M j, Y · H:i" }}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'sales:receipt' sale.pk %}" class="btn-secondary">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+        </svg>
+        Receipt
+      </a>
+      <a href="{% url 'sales:receipt_pdf' sale.pk %}" class="btn-secondary">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        PDF
+      </a>
+      {% if can_void %}
+        <a href="{% url 'sales:sale_void' sale.pk %}"
+           class="btn-secondary text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+          </svg>
+          Void
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ================= Content grid ================= #}
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+  {# ---- Left: line items + totals ---- #}
+  <div class="space-y-6 lg:col-span-2">
+
+    <div class="card overflow-hidden">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Items</h2>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+          <thead class="bg-slate-50 dark:bg-surface-dark">
+            <tr>
+              <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Item</th>
+              <th class="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400 md:table-cell">SKU</th>
+              <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty</th>
+              <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Price</th>
+              <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+            {% for item in sale.items.all %}
+              <tr>
+                <td class="px-4 py-3">
+                  <div class="font-medium text-slate-900 dark:text-slate-100">
+                    {{ item.product_name|default:item.product.name|default:"Item" }}
+                  </div>
+                </td>
+                <td class="hidden px-4 py-3 md:table-cell">
+                  {% if item.product_sku %}
+                    <code class="rounded bg-slate-100 px-1 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {{ item.product_sku }}
+                    </code>
+                  {% else %}
+                    <span class="text-slate-400">—</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ item.quantity }}</td>
+                <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{{ item.unit_price|floatformat:2 }}</td>
+                <td class="px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{{ item.line_total|floatformat:2 }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="px-4 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                  No items on this sale.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# Totals footer #}
+      <div class="border-t border-surface-border bg-slate-50 px-4 py-4 dark:border-surface-dark-border dark:bg-surface-dark">
+        <dl class="ml-auto max-w-xs space-y-1.5 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-slate-500 dark:text-slate-400">Subtotal</dt>
+            <dd class="text-slate-900 dark:text-slate-100">{{ sale.subtotal|floatformat:2 }}</dd>
+          </div>
+          {% if sale.tax %}
+            <div class="flex justify-between">
+              <dt class="text-slate-500 dark:text-slate-400">
+                Tax {% if sale.tax_rate %}({{ sale.tax_rate }}%){% endif %}
+              </dt>
+              <dd class="text-slate-900 dark:text-slate-100">{{ sale.tax|floatformat:2 }}</dd>
+            </div>
+          {% endif %}
+          {% if sale.discount %}
+            <div class="flex justify-between text-emerald-600 dark:text-emerald-400">
+              <dt>Discount</dt>
+              <dd>− {{ sale.discount|floatformat:2 }}</dd>
+            </div>
+          {% endif %}
+          <div class="flex justify-between border-t border-surface-border pt-2 dark:border-surface-dark-border">
+            <dt class="text-base font-semibold text-slate-900 dark:text-slate-100">Total</dt>
+            <dd class="text-base font-bold text-slate-900 dark:text-slate-100">
+              {{ business_currency|default:"USD" }} {{ sale.total|floatformat:2 }}
+            </dd>
+          </div>
+          {% if sale.payment_method == 'cash' and sale.amount_paid %}
+            <div class="flex justify-between pt-1">
+              <dt class="text-xs text-slate-500 dark:text-slate-400">Cash tendered</dt>
+              <dd class="text-xs text-slate-700 dark:text-slate-300">{{ sale.amount_paid|floatformat:2 }}</dd>
+            </div>
+            {% if sale.change_due %}
+              <div class="flex justify-between">
+                <dt class="text-xs text-slate-500 dark:text-slate-400">Change</dt>
+                <dd class="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  {{ sale.change_due|floatformat:2 }}
+                </dd>
+              </div>
+            {% endif %}
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    {% if sale.notes %}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notes</h2>
+        </div>
+        <div class="card-body text-sm text-slate-700 dark:text-slate-300">
+          {{ sale.notes|linebreaksbr }}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# ---- Right: metadata ---- #}
+  <div class="space-y-6">
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Details</h2>
+      </div>
+      <div class="card-body space-y-3 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">Status</span>
+          {% if sale.status == 'completed' %}
+            <span class="badge-green">Completed</span>
+          {% elif sale.status == 'void' %}
+            <span class="badge-red">Void</span>
+          {% elif sale.status == 'refunded' %}
+            <span class="badge-amber">Refunded</span>
+          {% else %}
+            <span class="badge-gray">{{ sale.get_status_display }}</span>
+          {% endif %}
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">Payment</span>
+          <span class="text-slate-900 dark:text-slate-100">{{ sale.get_payment_method_display }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">Cashier</span>
+          <span class="text-slate-900 dark:text-slate-100">
+            {% if sale.cashier %}
+              {{ sale.cashier.get_full_name|default:sale.cashier.username }}
+            {% else %}—{% endif %}
+          </span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">Items</span>
+          <span class="text-slate-900 dark:text-slate-100">{{ sale.item_count }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500 dark:text-slate-400">Created</span>
+          <span class="text-xs text-slate-900 dark:text-slate-100">{{ sale.created_at|date:"Y-m-d H:i" }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if sale.status == 'void' %}
+      <div class="card border-red-200 dark:border-red-900/50">
+        <div class="card-header bg-red-50 dark:bg-red-900/20">
+          <h2 class="text-sm font-semibold text-red-700 dark:text-red-400">Voided</h2>
+        </div>
+        <div class="card-body space-y-2 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">When</span>
+            <span class="text-slate-900 dark:text-slate-100">{{ sale.voided_at|date:"Y-m-d H:i"|default:"—" }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">By</span>
+            <span class="text-slate-900 dark:text-slate-100">
+              {% if sale.voided_by %}
+                {{ sale.voided_by.get_full_name|default:sale.voided_by.username }}
+              {% else %}—{% endif %}
+            </span>
+          </div>
+          {% if sale.void_reason %}
+            <div class="border-t border-red-200 pt-2 dark:border-red-900/50">
+              <div class="text-xs text-slate-500 dark:text-slate-400">Reason</div>
+              <div class="mt-1 text-slate-900 dark:text-slate-100">{{ sale.void_reason }}</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

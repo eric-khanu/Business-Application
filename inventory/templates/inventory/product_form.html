@@ -1,0 +1,175 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <a href="{% url 'inventory:product_list' %}"
+     class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to products
+  </a>
+  <h1 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ title }}</h1>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate
+      data-guard-submit data-loading-text="Saving…">
+
+  {% csrf_token %}
+
+  {# Non-field errors #}
+  {% if form.non_field_errors %}
+    <div class="mb-6 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+      <svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.7-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+      </svg>
+      <div class="flex-1">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    {# ================= LEFT: details + pricing + stock ================= #}
+    <div class="space-y-6 lg:col-span-2">
+
+      {# ---- Product details ---- #}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Product details</h2>
+          <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Identification and organisation.
+          </p>
+        </div>
+        <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-6">
+
+          <div class="sm:col-span-2">
+            {% include "partials/field.html" with field=form.sku %}
+          </div>
+          <div class="sm:col-span-4">
+            {% include "partials/field.html" with field=form.name %}
+          </div>
+          <div class="sm:col-span-3">
+            {% include "partials/field.html" with field=form.category %}
+          </div>
+          <div class="sm:col-span-3">
+            {% include "partials/field.html" with field=form.supplier %}
+          </div>
+          {% if form.barcode %}
+            <div class="sm:col-span-6">
+              {% include "partials/field.html" with field=form.barcode %}
+            </div>
+          {% endif %}
+          <div class="sm:col-span-6">
+            {% include "partials/field.html" with field=form.description %}
+          </div>
+        </div>
+      </div>
+
+      {# ---- Pricing ---- #}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Pricing</h2>
+          <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            In {{ business_currency|default:"USD" }}.
+          </p>
+        </div>
+        <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {% include "partials/field.html" with field=form.cost_price unit=business_currency %}
+          {% include "partials/field.html" with field=form.selling_price unit=business_currency %}
+        </div>
+      </div>
+
+      {# ---- Stock ---- #}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Stock</h2>
+          <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            {% if product %}
+              To change stock after creation, use <strong>Adjust stock</strong>.
+            {% else %}
+              Set the starting quantity — later changes are logged.
+            {% endif %}
+          </p>
+        </div>
+        <div class="card-body grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {% include "partials/field.html" with field=form.quantity %}
+          {% include "partials/field.html" with field=form.reorder_level %}
+          {% include "partials/field.html" with field=form.unit %}
+        </div>
+      </div>
+    </div>
+
+    {# ================= RIGHT: image + status ================= #}
+    <div class="space-y-6">
+
+      {# ---- Image ---- #}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Image</h2>
+        </div>
+        <div class="card-body">
+
+          {# Current image preview #}
+          {% if product and product.image %}
+            <div class="mb-4 flex items-center gap-3 rounded-md border border-surface-border bg-slate-50 p-3 dark:border-surface-dark-border dark:bg-surface-dark">
+              <img src="{{ product.image.url }}" alt=""
+                   class="h-16 w-16 rounded-md object-cover">
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                Current image. Upload a new one to replace it.
+              </div>
+            </div>
+          {% else %}
+            <div class="mb-4 flex items-center justify-center rounded-md border-2 border-dashed border-surface-border bg-slate-50 py-8 dark:border-surface-dark-border dark:bg-surface-dark">
+              <svg class="h-10 w-10 text-slate-300 dark:text-slate-600"
+                   fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+          {% endif %}
+
+          {% include "partials/field.html" with field=form.image %}
+        </div>
+      </div>
+
+      {# ---- Status ---- #}
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Status</h2>
+        </div>
+        <div class="card-body">
+          <label for="{{ form.is_active.id_for_label }}"
+                 class="flex items-center gap-3 cursor-pointer">
+            {{ form.is_active }}
+            <div>
+              <div class="text-sm font-medium text-slate-900 dark:text-slate-100">Active</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                Inactive products are hidden from the POS.
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ================= Actions ================= #}
+  <div class="mt-6 flex items-center justify-end gap-3">
+    <a href="{% url 'inventory:product_list' %}" class="btn-secondary">Cancel</a>
+    <button type="submit" class="btn-primary">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      {% if product %}Save changes{% else %}Create product{% endif %}
+    </button>
+  </div>
+</form>
+
+{% endblock %}

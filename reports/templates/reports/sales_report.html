@@ -1,0 +1,172 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Sales report · {{ current_business.name }}{% endblock %}
+
+{% block content %}
+
+{# ================= Page header ================= #}
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+  <div>
+    <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Sales report</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      {{ start|date:"M j, Y" }} &ndash; {{ end|date:"M j, Y" }}
+    </p>
+  </div>
+</div>
+
+{# ================= Filters ================= #}
+{% url 'reports:sales_report_csv' as csv_url %}
+{% include "partials/report_filters.html" with form=form csv_url=csv_url %}
+
+{# ================= Summary cards ================= #}
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+  <div class="card">
+    <div class="card-body">
+      <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Revenue
+      </p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+        {{ business_currency|default:"USD" }} {{ totals.revenue|default:0|floatformat:2 }}
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Orders
+      </p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+        {{ totals.orders|default:0 }}
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Average sale
+      </p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+        {{ business_currency|default:"USD" }} {{ totals.avg_sale|default:0|floatformat:2 }}
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <p class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        Tax collected
+      </p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+        {{ business_currency|default:"USD" }} {{ totals.tax|default:0|floatformat:2 }}
+      </p>
+    </div>
+  </div>
+</div>
+
+{# ================= Results table ================= #}
+<div class="card overflow-hidden">
+  <div class="card-header flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+      Breakdown
+      <span class="font-normal text-slate-400">· {{ period }}</span>
+    </h2>
+    <div class="inline-flex rounded-md border border-surface-border dark:border-surface-dark-border">
+      {% with p=request.GET.period|default:"daily" %}
+        <a href="?period=daily{% if request.GET.cashier %}&cashier={{ request.GET.cashier }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}"
+           class="rounded-l-md px-3 py-1.5 text-xs font-medium transition
+                  {% if p == 'daily' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          Daily
+        </a>
+        <a href="?period=weekly{% if request.GET.cashier %}&cashier={{ request.GET.cashier }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}"
+           class="border-l border-r border-surface-border px-3 py-1.5 text-xs font-medium transition dark:border-surface-dark-border
+                  {% if p == 'weekly' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          Weekly
+        </a>
+        <a href="?period=monthly{% if request.GET.cashier %}&cashier={{ request.GET.cashier }}{% endif %}{% if request.GET.payment_method %}&payment_method={{ request.GET.payment_method }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}"
+           class="rounded-r-md px-3 py-1.5 text-xs font-medium transition
+                  {% if p == 'monthly' %}bg-brand-600 text-white{% else %}text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+          Monthly
+        </a>
+      {% endwith %}
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-surface-border text-sm dark:divide-surface-dark-border">
+      <thead class="bg-slate-50 dark:bg-surface-dark">
+        <tr>
+          <th class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Period</th>
+          <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Orders</th>
+          <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Revenue</th>
+          <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Tax</th>
+          <th class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Discount</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-surface-border dark:divide-surface-dark-border">
+        {% for row in rows %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-surface-dark">
+            <td class="whitespace-nowrap px-4 py-3 text-slate-900 dark:text-slate-100">
+              {{ row.bucket|date:"M j, Y" }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+              {{ row.orders|default:0 }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right font-medium text-slate-900 dark:text-slate-100">
+              {{ business_currency|default:"USD" }} {{ row.revenue|default:0|floatformat:2 }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right text-slate-500 dark:text-slate-400">
+              {{ row.tax|default:0|floatformat:2 }}
+            </td>
+            <td class="whitespace-nowrap px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+              {% if row.discount %}− {{ row.discount|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="px-4 py-16 text-center">
+              <svg class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600"
+                   fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              <p class="mt-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                No sales in this period
+              </p>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Try changing the date range or filters.
+              </p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+
+      {% if rows %}
+        <tfoot class="bg-slate-50 dark:bg-surface-dark">
+          <tr>
+            <td class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Total
+            </td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">
+              {{ totals.orders|default:0 }}
+            </td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">
+              {{ business_currency|default:"USD" }} {{ totals.revenue|default:0|floatformat:2 }}
+            </td>
+            <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+              {{ totals.tax|default:0|floatformat:2 }}
+            </td>
+            <td class="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+              {% if totals.discount %}− {{ totals.discount|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+          </tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+{% endblock %}
